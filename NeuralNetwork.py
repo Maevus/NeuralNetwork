@@ -19,8 +19,8 @@ class NeuralNetwork:
         self.weightsHO = np.random.random((self.outputNodes, self.hiddenNodes))
 
         # init biases.
-        self.biasHidden = np.ones([self.hiddenNodes, 1])
-        self.biasOutput = np.ones([self.outputNodes, 1])
+        self.biasHidden = np.random.random((self.hiddenNodes, 1))
+        self.biasOutput = np.random.random((self.outputNodes, 1))
 
         self.learningRate = learningRate
 
@@ -29,10 +29,9 @@ class NeuralNetwork:
         print("**************************************************\n\n")
  
 
-    # TODO change name to predict or something.  
-    def feedforward(self, vstackedinputs):
+    def predict(self, inputs):
         # Calc hidden layer
-        hidden = np.dot(self.weightsIH, vstackedinputs)
+        hidden = np.dot(self.weightsIH, np.vstack(inputs))
         hidden = self.sigmoid(np.add(hidden, self.biasHidden))
 
         # Calc output layer
@@ -42,10 +41,7 @@ class NeuralNetwork:
         return output
 
 
-
     def train(self, inputs, targets):
-        #output = self.feedforward(np.vstack(inputs))
-
         # Calc hidden layer
         hidden = np.dot(self.weightsIH, np.vstack(inputs))
         hidden = self.sigmoid(np.add(hidden, self.biasHidden))
@@ -66,7 +62,7 @@ class NeuralNetwork:
 
         # Calculate weight deltas
         hiddenTransposed = np.transpose(hidden)
-        weightsHOdeltas = np.dot(gradient, hiddenTransposed)
+        weightsHOdeltas = np.multiply(gradient, hiddenTransposed) # TODO
         # Update weights and bias
         self.weightsHO = np.add(self.weightsHO, weightsHOdeltas)
         self.biasOutput = np.add(self.biasOutput, gradient)
@@ -83,8 +79,7 @@ class NeuralNetwork:
         hiddenGradient = np.multiply(self.learningRate, hiddenGradient)
         
         # Hidden deltas
-        inputsTransposed = np.transpose(inputs)
-        weightsIHdeltas = np.dot(inputsTransposed, hiddenGradient)
+        weightsIHdeltas = np.multiply(hiddenGradient, np.array(inputs)) 
 
         # Update weights and bias
         self.weightsIH = np.add(self.weightsIH, weightsIHdeltas)
@@ -103,6 +98,7 @@ with open("xor.json", "r") as f:
     raw_data = f.read()
 data = json.loads(raw_data)
 
+# Create neural network
 neuralNetwork = NeuralNetwork(2, 2, 1, 0.5)
 
 # Train
@@ -111,7 +107,7 @@ for i in range(50000):
     neuralNetwork.train(dpoint['inputs'], dpoint['targets'])
 
 # Test 
-print(neuralNetwork.feedforward([0,0]))
-print(neuralNetwork.feedforward([1,1]))
-print(neuralNetwork.feedforward([1,0]))
-print(neuralNetwork.feedforward([0,1]))
+print(neuralNetwork.predict([0,0]))
+print(neuralNetwork.predict([1,1]))
+print(neuralNetwork.predict([1,0]))
+print(neuralNetwork.predict([0,1]))
