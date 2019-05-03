@@ -24,28 +24,21 @@ class NeuralNetwork:
 
         print("Activating NN...\ninput nodes: {0}\nhidden nodes: {1}\noutput nodes: {2}\nlearning rate: {3}"
             .format(self.inputNodes, self.hiddenNodes, self.outputNodes, self.learningRate))
-        print("**************************************************\n\n")
-
-    def applyActivationFunc(self, matrix):
-        try:
-            return map(self.sigmoid, matrix)
-        except:
-            print("Error mapping activation function to weight matrix.")    
-
-
+        print("map(sigmoid, matrix)**************************************************\n\n")
+ 
     def feedForward(self, inputs):
         # Calc hidden layer
-        hidden = np.multiply(self.weightsIH, inputs)
-        np.add(hidden, self.biasHidden)
-        print("hidden layer weight matrix {0}".format(hidden))
-        self.applyActivationFunc(hidden)      
+        inputs = np.vstack(inputs)
+        hidden = np.dot(self.weightsIH, inputs)
+        hidden = np.add(hidden, self.biasHidden)
+        hidden = self.sigmoid(hidden)     
+        print("squashed hidden layer:\n{0}".format(hidden))
 
         # Calc output layer
-        output = np.multiply(self.weightsHO, hidden)
-        np.add(output, self.biasOutput)
-        self.applyActivationFunc(output)
-
-        print("output layer: {0}".format(output))
+        output = np.dot(self.weightsHO, hidden)
+        output = np.add(output, self.biasOutput)
+        output = self.sigmoid(output) 
+        print("squashed output:\n{0}".format(output))
         print("shape: {0}".format(output.shape))
 
         return output
@@ -57,11 +50,9 @@ class NeuralNetwork:
         return sx*(1.0 - sx)
 
 
-
-
 # Setup
 neuralNetwork = NeuralNetwork(2, 2, 1, 0.1)
-inputs = [0,1]
+inputs = np.array([0,1])
 
 # Run 
 neuralNetwork.feedForward(inputs)
