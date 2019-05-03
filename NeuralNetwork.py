@@ -43,26 +43,24 @@ class NeuralNetwork:
 
     def train(self, inputs, targets):
         # Calc hidden layer
-        hidden = np.dot(self.weightsIH, np.vstack(inputs))
-        hidden = self.sigmoid(np.add(hidden, self.biasHidden))
+        h = np.dot(self.weightsIH, np.vstack(inputs))
+        hidden = self.sigmoid(np.add(h, self.biasHidden))
 
         # Calc output layer
-        output = np.dot(self.weightsHO, hidden)
-        output = self.sigmoid(np.add(output, self.biasOutput))
+        o = np.dot(self.weightsHO, hidden)
+        output = self.sigmoid(np.add(o, self.biasOutput))
 
         #### Calculate output layer errors ####
         outputErrors = np.subtract(np.vstack(targets), output)
 
         # Calculate Gradient
-        gradient = self.sigmoidDerivative(output)
-        # Muliply output deltas with output errors
-        gradient = np.multiply(outputErrors, gradient)
-        # Learning rate
-        gradient = np.multiply(self.learningRate, gradient)
+        outputDerivative = self.sigmoidDerivative(output)
+        # Muliply output deltas with output errors & learning rate
+        gradient = np.multiply(self.learningRate, np.multiply(outputErrors, outputDerivative))
 
         # Calculate weight deltas
-        hiddenTransposed = np.transpose(hidden)
-        weightsHOdeltas = np.multiply(gradient, hiddenTransposed) # TODO
+        weightsHOdeltas = np.multiply(gradient, np.transpose(hidden)) 
+
         # Update weights and bias
         self.weightsHO = np.add(self.weightsHO, weightsHOdeltas)
         self.biasOutput = np.add(self.biasOutput, gradient)
@@ -74,12 +72,11 @@ class NeuralNetwork:
         hiddenErrors = np.dot(weightsHOTransposed, outputErrors)
 
         # Hidden gradient
-        hiddenGradient = self.sigmoidDerivative(hidden)
-        hiddenGradient = np.multiply(hiddenErrors, hiddenGradient)
-        hiddenGradient = np.multiply(self.learningRate, hiddenGradient)
+        hiddenGradient = np.multiply(hiddenErrors, self.sigmoidDerivative(hidden))
+        hiddenGradientLearningR = np.multiply(self.learningRate, hiddenGradient)
         
         # Hidden deltas
-        weightsIHdeltas = np.multiply(hiddenGradient, np.array(inputs)) 
+        weightsIHdeltas = np.multiply(hiddenGradientLearningR, inputs) 
 
         # Update weights and bias
         self.weightsIH = np.add(self.weightsIH, weightsIHdeltas)
@@ -99,7 +96,7 @@ with open("xor.json", "r") as f:
 data = json.loads(raw_data)
 
 # Create neural network
-neuralNetwork = NeuralNetwork(2, 2, 1, 0.5)
+neuralNetwork = NeuralNetwork(2, 2, 1, 0.2)
 
 # Train
 for i in range(50000):
