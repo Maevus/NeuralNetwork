@@ -5,6 +5,8 @@ Maeve Lynskey - 07257724
 '''
 
 import numpy as np
+import json
+import random
 
 class NeuralNetwork:
     def __init__(self, inputNodes, hiddenNodes, outputNodes, learningRate):
@@ -16,9 +18,9 @@ class NeuralNetwork:
         self.weightsIH = np.random.random((self.hiddenNodes, self.inputNodes))
         self.weightsHO = np.random.random((self.outputNodes, self.hiddenNodes))
 
-        # init biases with random values between 0 and 1.
-        self.biasHidden = np.random.random((self.hiddenNodes, 1))
-        self.biasOutput = np.random.random((self.outputNodes, 1))
+        # init biases.
+        self.biasHidden = np.ones([self.hiddenNodes, 1])
+        self.biasOutput = np.ones([self.outputNodes, 1])
 
         self.learningRate = learningRate
 
@@ -32,13 +34,10 @@ class NeuralNetwork:
         # Calc hidden layer
         hidden = np.dot(self.weightsIH, vstackedinputs)
         hidden = self.sigmoid(np.add(hidden, self.biasHidden))
-        print("squashed hidden layer:\n{0}".format(hidden))
 
         # Calc output layer
         output = np.dot(self.weightsHO, hidden)
         output = self.sigmoid(np.add(output, self.biasOutput))
-        print("squashed output:\n {0}".format(output))
-        print("shape: {0}".format(output.shape))
 
         return output
 
@@ -50,12 +49,10 @@ class NeuralNetwork:
         # Calc hidden layer
         hidden = np.dot(self.weightsIH, np.vstack(inputs))
         hidden = self.sigmoid(np.add(hidden, self.biasHidden))
-        print("squashed hidden layer:\n{0}".format(hidden))
 
         # Calc output layer
         output = np.dot(self.weightsHO, hidden)
         output = self.sigmoid(np.add(output, self.biasOutput))
-        print("squashed output:\n {0}".format(output))
 
         #### Calculate output layer errors ####
         outputErrors = np.subtract(np.vstack(targets), output)
@@ -66,7 +63,6 @@ class NeuralNetwork:
         gradient = np.multiply(outputErrors, gradient)
         # Learning rate
         gradient = np.multiply(self.learningRate, gradient)
-        print("gradient: {0}".format(gradient))
 
         # Calculate weight deltas
         hiddenTransposed = np.transpose(hidden)
@@ -103,9 +99,19 @@ class NeuralNetwork:
         return sx*(1.0 - sx)
 
 # Setup
-neuralNetwork = NeuralNetwork(2, 2, 2, 0.1)
-inputs = np.array([0,1])
-targets = [1, 2]
+with open("xor.json", "r") as f:
+    raw_data = f.read()
+data = json.loads(raw_data)
 
-# Run 
-neuralNetwork.train(inputs, targets)
+neuralNetwork = NeuralNetwork(2, 2, 1, 0.5)
+
+# Train
+for i in range(50000):
+    dpoint = random.choice(data)
+    neuralNetwork.train(dpoint['inputs'], dpoint['targets'])
+
+# Test 
+print(neuralNetwork.feedforward([0,0]))
+print(neuralNetwork.feedforward([1,1]))
+print(neuralNetwork.feedforward([1,0]))
+print(neuralNetwork.feedforward([0,1]))
