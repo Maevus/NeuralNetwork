@@ -65,10 +65,10 @@ class NeuralNetwork:
         # Calculate Gradient
         outputDerivative = self.sigmoidDerivative(output)
         # Muliply output deltas with output errors & learning rate
-        gradient = np.multiply(self.learningRate, np.multiply(outputErrors, outputDerivative))
+        self.gradient = np.multiply(self.learningRate, np.multiply(outputErrors, outputDerivative))
         
         # Calculate weight deltas
-        weightsHOdeltas = np.multiply(gradient, np.transpose(hidden)) 
+        self.weightsHOdeltas = np.multiply(self.gradient, np.transpose(hidden)) 
 
         #### Calculate hidden layer errors ####
 
@@ -77,24 +77,23 @@ class NeuralNetwork:
         hiddenErrors = np.dot(weightsHOTransposed, outputErrors)
 
         # Hidden gradient
-        hiddenGradient = np.multiply(hiddenErrors, self.sigmoidDerivative(hidden))
-        hiddenGradientLearningR = np.multiply(self.learningRate, hiddenGradient)
+        hg = np.multiply(hiddenErrors, self.sigmoidDerivative(hidden))
+        self.hiddenGradient = np.multiply(self.learningRate, hg)
         
         # Hidden deltas
-        weightsIHdeltas = np.multiply(hiddenGradientLearningR, inputs) 
-
-        self.updateWeightsBiases(weightsHOdeltas, weightsIHdeltas, gradient, hiddenGradient)
+        self.weightsIHdeltas = np.multiply(self.hiddenGradient, inputs) 
 
         return outputErrors
 
 
-    def updateWeightsBiases(self, weightsHOdeltas, weightsIHdeltas, gradient, hiddenGradient):
+    def updateWeightsAndBiases(self):
             # Update weights and bias
-            self.weightsHO = np.add(self.weightsHO, weightsHOdeltas)
-            self.weightsIH = np.add(self.weightsIH, weightsIHdeltas)
+            self.weightsHO = np.add(self.weightsHO, self.weightsHOdeltas)
+            self.weightsIH = np.add(self.weightsIH, self.weightsIHdeltas)
             
-            self.biasOutput = np.add(self.biasOutput, gradient)
-            self.biasHidden = np.add(self.biasHidden, hiddenGradient)
+            self.biasOutput = np.add(self.biasOutput, self.gradient)
+            self.biasHidden = np.add(self.biasHidden, self.hiddenGradient)
+
 
     def sigmoid(self, x):
         return 1.0/(1.0 + np.exp(-x))
@@ -102,37 +101,34 @@ class NeuralNetwork:
     def sigmoidDerivative(self, sx):
         return sx*(1.0 - sx)
 
-# Setup
-with open("xor.json", "r") as f:
-    raw_data = f.read()
-data = json.loads(raw_data)
 
-# Create neural network
-neuralNetwork = NeuralNetwork(2, 2, 1, 0.2)
+if __name__ == "__main__":
+    
+    with open("xor.json", "r") as f:
+        raw_data = f.read()
+    data = json.loads(raw_data)
 
-# Prep 
-timestamp = datetime.timestamp(datetime.now())
+    neuralNetwork = NeuralNetwork(2, 2, 1, 0.2)
 
-file = open("errors_{0}.txt".format(datetime.timestamp(datetime.now())), "w")
+    
+    file = open("errors_{0}.txt".format(datetime.timestamp(datetime.now())), "w")
 
-# Train
+    # Train
+    # Gradient Descent
+    for epoch in range(20000):
+        error = 0
+        for d in data:
+            error = neuralNetwork.train(d['inputs'], d['targets'])
+            if (random.randint(0,1) < 0.10):
+                neuralNetwork.updateWeightsAndBiases()
+        file.write("GD Iteration: {0}, Error: {1} \n".format(epoch, np.array2string(error.flatten())))
+        
 
-for i in range(10000):
+    # Tidy
+    file.close
 
-    dpoint = random.choice(data)
-    error = neuralNetwork.train(dpoint['inputs'], dpoint['targets'])
-    file.write("Iteration: {0}, Error: {1} \n".format(i, np.array2string(error.flatten())))
-
-# for epoch in range(000):
-#     for d in data:
-#         error += neuralNetwork.train(d['inputs'], d['targets'])
-#         file.write("Epoch: {0}, Error: {1} \n".format(epoch, np.array2string(error.flatten())))
-
-# Tidy
-file.close
-
-# Test 
-print(neuralNetwork.predict([0,0]))
-print(neuralNetwork.predict([1,1]))
-print(neuralNetwork.predict([1,0]))
-print(neuralNetwork.predict([0,1]))
+    # Test 
+    print(neuralNetwork.predict([0,0]))
+    print(neuralNetwork.predict([1,1]))
+    print(neuralNetwork.predict([1,0]))
+    print(neuralNetwork.predict([0,1]))
