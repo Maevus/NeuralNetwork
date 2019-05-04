@@ -7,6 +7,7 @@ Maeve Lynskey - 07257724
 import numpy as np
 import json
 import random
+from datetime import datetime
 
 class NeuralNetwork:
     def __init__(self, inputNodes, hiddenNodes, outputNodes, learningRate):
@@ -18,9 +19,17 @@ class NeuralNetwork:
         self.weightsIH = np.random.random((self.hiddenNodes, self.inputNodes))
         self.weightsHO = np.random.random((self.outputNodes, self.hiddenNodes))
 
+        # init zeroed delta matrices
+        self.weightsIHdeltas = np.zeros((self.hiddenNodes, self.inputNodes))
+        self.weightsHOdeltas = np.zeros((self.outputNodes, self.hiddenNodes))
+
+        # store gradient
+        self.gradient = np.zeros((self.outputNodes, 1))
+        self.hiddenGradient = np.zeros((self.hiddenNodes, 1))
+        
         # init biases.
-        self.biasHidden = np.random.random((self.hiddenNodes, 1))
         self.biasOutput = np.random.random((self.outputNodes, 1))
+        self.biasHidden = np.random.random((self.hiddenNodes, 1))
 
         self.learningRate = learningRate
 
@@ -57,13 +66,9 @@ class NeuralNetwork:
         outputDerivative = self.sigmoidDerivative(output)
         # Muliply output deltas with output errors & learning rate
         gradient = np.multiply(self.learningRate, np.multiply(outputErrors, outputDerivative))
-
+        
         # Calculate weight deltas
         weightsHOdeltas = np.multiply(gradient, np.transpose(hidden)) 
-
-        # Update weights and bias
-        self.weightsHO = np.add(self.weightsHO, weightsHOdeltas)
-        self.biasOutput = np.add(self.biasOutput, gradient)
 
         #### Calculate hidden layer errors ####
 
@@ -78,14 +83,21 @@ class NeuralNetwork:
         # Hidden deltas
         weightsIHdeltas = np.multiply(hiddenGradientLearningR, inputs) 
 
-        # Update weights and bias
-        self.weightsIH = np.add(self.weightsIH, weightsIHdeltas)
-        self.biasHidden = np.add(self.biasHidden, hiddenGradient)
+        self.updateWeightsBiases(weightsHOdeltas, weightsIHdeltas, gradient, hiddenGradient)
 
+        return outputErrors
+
+
+    def updateWeightsBiases(self, weightsHOdeltas, weightsIHdeltas, gradient, hiddenGradient):
+            # Update weights and bias
+            self.weightsHO = np.add(self.weightsHO, weightsHOdeltas)
+            self.weightsIH = np.add(self.weightsIH, weightsIHdeltas)
+            
+            self.biasOutput = np.add(self.biasOutput, gradient)
+            self.biasHidden = np.add(self.biasHidden, hiddenGradient)
 
     def sigmoid(self, x):
         return 1.0/(1.0 + np.exp(-x))
-
 
     def sigmoidDerivative(self, sx):
         return sx*(1.0 - sx)
@@ -98,10 +110,26 @@ data = json.loads(raw_data)
 # Create neural network
 neuralNetwork = NeuralNetwork(2, 2, 1, 0.2)
 
+# Prep 
+timestamp = datetime.timestamp(datetime.now())
+
+file = open("errors_{0}.txt".format(datetime.timestamp(datetime.now())), "w")
+
 # Train
-for i in range(50000):
+
+for i in range(10000):
+
     dpoint = random.choice(data)
-    neuralNetwork.train(dpoint['inputs'], dpoint['targets'])
+    error = neuralNetwork.train(dpoint['inputs'], dpoint['targets'])
+    file.write("Iteration: {0}, Error: {1} \n".format(i, np.array2string(error.flatten())))
+
+# for epoch in range(000):
+#     for d in data:
+#         error += neuralNetwork.train(d['inputs'], d['targets'])
+#         file.write("Epoch: {0}, Error: {1} \n".format(epoch, np.array2string(error.flatten())))
+
+# Tidy
+file.close
 
 # Test 
 print(neuralNetwork.predict([0,0]))
