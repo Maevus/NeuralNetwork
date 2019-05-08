@@ -87,7 +87,6 @@ class NeuralNetwork:
 
 
     def updateWeightsAndBiases(self):
-            # Update weights and bias
             self.weightsHO = np.add(self.weightsHO, self.weightsHOdeltas)
             self.weightsIH = np.add(self.weightsIH, self.weightsIHdeltas)
             
